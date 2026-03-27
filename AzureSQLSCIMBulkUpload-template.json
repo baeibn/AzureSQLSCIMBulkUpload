@@ -7,7 +7,7 @@
             "type": "String"
         },
         "connections_sqldw_externalid": {
-            "defaultValue": "/subscriptions/0dda7701-8ea5-43f8-b552-b3cbd3e77450/resourceGroups/Demoenvironment/providers/Microsoft.Web/connections/sqldw",
+            "defaultValue":  [concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/sqldw')],
             "type": "String"
         }
     },
@@ -398,8 +398,8 @@
                     "$connections": {
                         "value": {
                             "sqldw": {
-                                "id": "/subscriptions/0dda7701-8ea5-43f8-b552-b3cbd3e77450/providers/Microsoft.Web/locations/northeurope/managedApis/sqldw",
-                                "connectionId": "[parameters('connections_sqldw_externalid')]",
+                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]",
+                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_sqldw_externalid')]",
                                 "connectionName": "sqldw",
                                 "connectionProperties": {}
                             }
