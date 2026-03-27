@@ -399,7 +399,7 @@
                         "value": {
                             "sqldw": {
                                 "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]",
-                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_sqldw_externalid')]",
+                                "connectionId": "[parameters('connections_sqldw_externalid')]",
                                 "connectionName": "sqldw",
                                 "connectionProperties": {}
                             }
