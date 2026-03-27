@@ -7,7 +7,7 @@
             "type": "String"
         },
         "connections_sqldw_externalid": {
-            "defaultValue":  [concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/sqldw')],
+            "defaultValue":  "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/sqldw')]",
             "type": "String"
         }
     },
