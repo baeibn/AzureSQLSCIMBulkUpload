@@ -572,7 +572,7 @@
           "$connections": {
             "value": {
               "azuresql": {
-                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sql')]",
+                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azuresql_name'))]",
                 "connectionName": "[parameters('azuresql_name')]"
               }
@@ -591,7 +591,7 @@
       "name": "[parameters('azuresql_name')]",
       "properties": {
         "api": {
-          "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sql')]"
+          "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]"
         },
         "displayName": "[parameters('azuresql_displayName')]",
         "parameterValues": {
