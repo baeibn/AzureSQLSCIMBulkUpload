@@ -40,7 +40,7 @@
       "properties": {
         "displayName": "sqldw",
         "api": {
-          "id": "[resourceId('Microsoft.Web/locations/', parameters('location'), '/managedApis/sqldw')]"
+          "id": "[resourceId('Microsoft.Web/locations/' parameters('location') '/managedApis/sqldw')]"
         }
       }
     },
@@ -429,7 +429,7 @@
           "$connections": {
             "value": {
               "sqldw": {
-                "id": "[resourceId('Microsoft.Web/locations/', parameters('location'), '/managedApis/sqldw')]",
+                "id": "[resourceId('Microsoft.Web/locations/' parameters('location') '/managedApis/sqldw')]",
                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sqlConnectionName'))]",
                 "connectionName": "[parameters('sqlConnectionName')]",
                 "connectionProperties": {}
