@@ -1,17 +1,15 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "workflows_AzureSQLSCIMBulkUpload_name": {
-            "defaultValue": "AzureSQLSCIMBulkUpload",
-            "type": "String"
-        },
-        "connections_sqldw_externalid": {
-            "defaultValue":  "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/sqldw')]",
-            "type": "String"
-        }
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logicAppName": {
+      "type": "string",
+      "defaultValue": "AzureSqlSCIMBulkUpload",
+      "metadata": {
+        "description": "Name of the Logic App."
+      }
     },
-        "logicAppLocation": {
+    "logicAppLocation": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
       "allowedValues": [
@@ -100,402 +98,512 @@
         "description": "Location of the Logic App."
       }
     },
-    "variables": {},
-    "resources": [
-        {
-            "type": "Microsoft.Logic/workflows",
-            "apiVersion": "2017-07-01",
-            "name": "[parameters('workflows_AzureSQLSCIMBulkUpload_name')]",
-            "location": "[parameters('logicAppLocation')]",
-            "identity": {
-                "type": "SystemAssigned"
+    "Send_SCIMBulkPayload_to_API_endpoint-Audience": {
+      "type": "string",
+      "defaultValue": "https://graph.microsoft.com"
+    },
+    "Send_SCIMBulkPayload_to_API_endpoint_on_last_record-Audience": {
+      "type": "string",
+      "defaultValue": "https://graph.microsoft.com"
+    },
+    "RecurrenceFrequency": {
+      "type": "string",
+      "defaultValue": "Day"
+    },
+    "RecurrenceInterval": {
+      "type": "int",
+      "defaultValue": 5
+    },
+    "paramSCIM API uri": {
+      "type": "string",
+      "defaultValue": "https://graph.microsoft.com/v1.0/servicePrincipals/7d8c5779-d1cb-4e71-85d3-070c073480c4/synchronization/jobs/API2AAD.9d82b8f1037d41fc9d3481de7acbbef8.7bdd363c-4fa0-4ed7-a625-39c92e4185a0/bulkUpload"
+    },
+    "paramAzureSql View name": {
+      "type": "string",
+      "defaultValue": "public.empview"
+    },
+    "azuresql_name": {
+      "type": "string",
+      "defaultValue": "azuresql"
+    },
+    "azuresql_displayName": {
+      "type": "string",
+      "defaultValue": "AzureSqlServer"
+    },
+    "azuresql_server": {
+      "type": "string",
+      "defaultValue": "demoserv.database.azure.com:5432",
+      "metadata": {
+        "description": "Specify the AzureSQL server. Server[:port]"
+      }
+    },
+    "azuresql_database": {
+      "type": "string",
+      "defaultValue": "database.windows.net",
+      "metadata": {
+        "description": "Specify the AzureSQL database name."
+      }
+    },
+    "azuresql_authType": {
+      "type": "string",
+      "defaultValue": "basic",
+      "allowedValues": [
+        "basic"
+      ],
+      "metadata": {
+        "description": "Authentication type to connect to your database"
+      }
+    },
+    "azuresql_username": {
+      "type": "securestring",
+      "defaultValue": null,
+      "metadata": {
+        "description": "Username credential"
+      }
+    },
+    "azuresql_password": {
+      "type": "securestring",
+      "defaultValue": null,
+      "metadata": {
+        "description": "Password credential"
+      }
+    },
+    "azuresql_encryptConnection": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Encrypt Connection"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('logicAppName')]",
+      "location": "[parameters('logicAppLocation')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('azuresql_name'))]"
+      ],
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "SCIM API uri": {
+              "defaultValue": "[parameters('paramSCIM API uri')]",
+              "type": "String"
             },
-            "properties": {
-                "state": "Enabled",
-                "definition": {
-                    "metadata": {
-                        "notes": {}
-                    },
-                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-                    "contentVersion": "1.0.0.0",
-                    "parameters": {
-                        "SCIM API uri": {
-                            "defaultValue": "https://graph.microsoft.com/v1.0/servicePrincipals/64989bbd-bd37-460c-9fbd-af2f7635e6c1/synchronization/jobs/API2AD.76ba8ded934c4e76952ca0a067945af7.96706185-141b-4fc1-986c-61611b7873ee/bulkUpload",
-                            "type": "String"
-                        },
-                        "SQL Servername": {
-                            "defaultValue": "letsdocloud.database.windows.net",
-                            "type": "String"
-                        },
-                        "Database": {
-                            "defaultValue": "hrsource",
-                            "type": "String"
-                        },
-                        "Tablename": {
-                            "defaultValue": "[[dbo].[V_Employees]",
-                            "type": "String"
-                        },
-                        "$connections": {
-                            "defaultValue": {},
-                            "type": "Object"
-                        }
-                    },
-                    "staticResults": {
-                        "Get_rows0": {
-                            "status": "Succeeded",
-                            "hasDelegate": false
-                        }
-                    },
-                    "triggers": {
-                        "Recurrence": {
-                            "recurrence": {
-                                "frequency": "Day",
-                                "interval": 5
-                            },
-                            "evaluatedRecurrence": {
-                                "frequency": "Day",
-                                "interval": 5
-                            },
-                            "type": "Recurrence"
-                        }
-                    },
-                    "actions": {
-                        "For_each": {
-                            "foreach": "@body('Get_rows_(V2)')?['value']",
-                            "actions": {
-                                "Check_if_we_are_at_max_bulk_size_(50_records)": {
-                                    "actions": {
-                                        "Append_last_SCIMUser_record_in_the_chunk": {
-                                            "type": "AppendToStringVariable",
-                                            "inputs": {
-                                                "name": "SCIMBulkPayload",
-                                                "value": "@outputs('Construct_SCIMUser')"
-                                            }
-                                        },
-                                        "Finalize_SCIMBulkPayload": {
-                                            "runAfter": {
-                                                "Append_last_SCIMUser_record_in_the_chunk": [
-                                                    "Succeeded"
-                                                ]
-                                            },
-                                            "type": "AppendToStringVariable",
-                                            "inputs": {
-                                                "name": "SCIMBulkPayload",
-                                                "value": "  ],\n  \"failOnErrors\": null\n}"
-                                            }
-                                        },
-                                        "Prepare_next_chunk_of_SCIMBulkPayload": {
-                                            "runAfter": {
-                                                "Reset_Iteration_Count": [
-                                                    "Succeeded"
-                                                ]
-                                            },
-                                            "type": "SetVariable",
-                                            "inputs": {
-                                                "name": "SCIMBulkPayload",
-                                                "value": "{\n  \"schemas\": [\n    \"urn:ietf:params:scim:api:messages:2.0:BulkRequest\"\n  ],\n  \"Operations\": ["
-                                            }
-                                        },
-                                        "Reset_Iteration_Count": {
-                                            "runAfter": {
-                                                "Send_SCIMBulkPayload_to_API_endpoint": [
-                                                    "Succeeded"
-                                                ]
-                                            },
-                                            "type": "SetVariable",
-                                            "inputs": {
-                                                "name": "IterationCount",
-                                                "value": 0
-                                            }
-                                        },
-                                        "Send_SCIMBulkPayload_to_API_endpoint": {
-                                            "runAfter": {
-                                                "View_SCIMBulkPayload": [
-                                                    "Succeeded"
-                                                ]
-                                            },
-                                            "type": "Http",
-                                            "inputs": {
-                                                "uri": "@parameters('SCIM API uri')",
-                                                "method": "POST",
-                                                "headers": {
-                                                    "Content-Type": "application/scim+json"
-                                                },
-                                                "body": "@variables('SCIMBulkPayload')",
-                                                "authentication": {
-                                                    "type": "ManagedServiceIdentity",
-                                                    "audience": "https://graph.microsoft.com"
-                                                }
-                                            },
-                                            "operationOptions": "DisableAsyncPattern"
-                                        },
-                                        "View_SCIMBulkPayload": {
-                                            "runAfter": {
-                                                "Finalize_SCIMBulkPayload": [
-                                                    "Succeeded"
-                                                ]
-                                            },
-                                            "type": "Compose",
-                                            "inputs": "@variables('SCIMBulkPayload')"
-                                        }
-                                    },
-                                    "runAfter": {
-                                        "Construct_SCIMUser": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "else": {
-                                        "actions": {
-                                            "Append_SCIMUser_record": {
-                                                "type": "AppendToStringVariable",
-                                                "inputs": {
-                                                    "name": "SCIMBulkPayload",
-                                                    "value": "@concat(outputs('Construct_SCIMUser'),',')"
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "expression": {
-                                        "or": [
-                                            {
-                                                "equals": [
-                                                    "@variables('IterationCount')",
-                                                    50
-                                                ]
-                                            }
-                                        ]
-                                    },
-                                    "type": "If"
-                                },
-                                "Construct_SCIMUser": {
-                                    "runAfter": {
-                                        "Increment_IterationCount": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "Compose",
-                                    "inputs": {
-                                        "bulkId": "@{guid()}",
-                                        "data": {
-                                            "active": "@if(equals(items('For_each')?['employeeStatus'],'active'),true,false)",
-                                            "addresses": [
-                                                {
-                                                    "country": "@{item()?['co']}",
-                                                    "locality": "@{item()?['location']}",
-                                                    "postalCode": "@{item()?['postalCode']}",
-                                                    "streetAddress": "@{item()?['street']}",
-                                                    "type": "work"
-                                                }
-                                            ],
-                                            "displayName": "@{item()?['displayName']}",
-                                            "externalId": "@{item()?['employeeID']}",
-                                            "userName": "@{item()?['employeeID']}",
-                                            "name": {
-                                                "familyName": "@{item()?['lastName']}",
-                                                "givenName": "@{item()?['firstName']}"
-                                            },
-                                            "title": "@{item()?['jobTitle']}",
-                                            "nickName": "",
-                                            "phoneNumbers": [
-                                                {
-                                                    "type": "mobile",
-                                                    "value": ""
-                                                }
-                                            ],
-                                            "emails": [
-                                                {
-                                                    "type": "work",
-                                                    "value": "@{item()?['MailTo']}"
-                                                }
-                                            ],
-                                            "schemas": [
-                                                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
-                                                "urn:microsoft:sql2scim"
-                                            ],
-                                            "urn:microsoft:sql2scim": {
-                                                "terminationdate": "@{item()?['employeeEndDate']}",
-                                                "hiredate": "@{item()?['employeeStartDate']}",
-                                                "protected": "@{item()?['protected']}",
-                                                "accountname": "@{item()?['accountName']}",
-                                                "ADPath": "@{item()?['ADPath']}",
-                                                "accountType": "@{item()?['accountType']}"
-                                            },
-                                            "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
-                                                "organization": "@{item()?['company']}",
-                                                "costCenter": "@{item()?['administrationID']}",
-                                                "department": "@{item()?['unit']}",
-                                                "division": "@{item()?['administration']}",
-                                                "employeeNumber": "@{item()?['employementNr']}",
-                                                "manager": {
-                                                    "value": "@{item()?['Manager']}"
-                                                }
-                                            }
-                                        },
-                                        "method": "POST",
-                                        "path": "/Users"
-                                    }
-                                },
-                                "Increment_IterationCount": {
-                                    "type": "IncrementVariable",
-                                    "inputs": {
-                                        "name": "IterationCount",
-                                        "value": 1
-                                    }
-                                }
-                            },
-                            "runAfter": {
-                                "Initialize_InvocationDateTime": [
-                                    "Succeeded"
-                                ]
-                            },
-                            "type": "Foreach",
-                            "runtimeConfiguration": {
-                                "concurrency": {
-                                    "repetitions": 1
-                                }
-                            }
-                        },
-                        "Check_if_bulk_has_unsend_records": {
-                            "actions": {
-                                "Finalize_SCIMBulkPayload_on_last_record": {
-                                    "runAfter": {
-                                        "Set_variable": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "AppendToStringVariable",
-                                    "inputs": {
-                                        "name": "SCIMBulkPayload",
-                                        "value": " ],\n  \"failOnErrors\": null\n}"
-                                    }
-                                },
-                                "View_SCIMBulkPayload_on_last_record": {
-                                    "runAfter": {
-                                        "Finalize_SCIMBulkPayload_on_last_record": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "Compose",
-                                    "inputs": "@variables('SCIMBulkPayload')"
-                                },
-                                "Send_SCIMBulkPayload_to_API_endpoint_on_last_record": {
-                                    "runAfter": {
-                                        "View_SCIMBulkPayload_on_last_record": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "Http",
-                                    "inputs": {
-                                        "uri": "@parameters('SCIM API uri')",
-                                        "method": "POST",
-                                        "headers": {
-                                            "Content-Type": "application/scim+json"
-                                        },
-                                        "body": "@variables('SCIMBulkPayload')",
-                                        "authentication": {
-                                            "type": "ManagedServiceIdentity",
-                                            "audience": "https://graph.microsoft.com"
-                                        }
-                                    },
-                                    "runtimeConfiguration": {
-                                        "contentTransfer": {
-                                            "transferMode": "Chunked"
-                                        }
-                                    }
-                                },
-                                "Remove_last_comma": {
-                                    "type": "Compose",
-                                    "inputs": "@substring(variables('SCIMBulkPayload'),0,sub(length(variables('SCIMBulkPayload')),1))"
-                                },
-                                "Set_variable": {
-                                    "runAfter": {
-                                        "Remove_last_comma": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "SetVariable",
-                                    "inputs": {
-                                        "name": "SCIMBulkPayload",
-                                        "value": "@{outputs('Remove_last_comma')}"
-                                    }
-                                }
-                            },
-                            "runAfter": {
-                                "For_each": [
-                                    "Succeeded"
-                                ]
-                            },
-                            "else": {
-                                "actions": {}
-                            },
-                            "expression": {
-                                "and": [
-                                    {
-                                        "greater": [
-                                            "@variables('IterationCount')",
-                                            0
-                                        ]
-                                    }
-                                ]
-                            },
-                            "type": "If"
-                        },
-                        "Initialize_InvocationDateTime": {
-                            "runAfter": {
-                                "Get_rows_(V2)": [
-                                    "Succeeded"
-                                ]
-                            },
-                            "type": "InitializeVariable",
-                            "inputs": {
-                                "variables": [
-                                    {
-                                        "name": "IterationCount",
-                                        "type": "integer",
-                                        "value": 0
-                                    },
-                                    {
-                                        "name": "SCIMBulkPayload",
-                                        "type": "string",
-                                        "value": "{\n  \"schemas\": [\n    \"urn:ietf:params:scim:api:messages:2.0:BulkRequest\"\n  ],\n  \"Operations\": [\n"
-                                    },
-                                    {
-                                        "name": "InvocationDateTime",
-                                        "type": "string",
-                                        "value": "@{utcNow()}"
-                                    }
-                                ]
-                            }
-                        },
-                        "Get_rows_(V2)": {
-                            "runAfter": {},
-                            "type": "ApiConnection",
-                            "inputs": {
-                                "host": {
-                                    "connection": {
-                                        "name": "@parameters('$connections')['sqldw']['connectionId']"
-                                    }
-                                },
-                                "method": "get",
-                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('SQL Servername')))},@{encodeURIComponent(encodeURIComponent(parameters('Database')))}/tables/@{encodeURIComponent(encodeURIComponent(parameters('Tablename')))}/items"
-                            }
-                        }
-                    },
-                    "outputs": {}
-                },
-                "parameters": {
-                    "$connections": {
-                        "value": {
-                            "sqldw": {
-                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]",
-                                "connectionId": "[parameters('connections_sqldw_externalid')]",
-                                "connectionName": "sqldw",
-                                "connectionProperties": {}
-                            }
-                        }
-                    }
-                }
+            "AzureSql View name": {
+              "defaultValue": "[parameters('paramAzureSql View name')]",
+              "type": "String"
+            },
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
             }
+          },
+          "staticResults": {
+            "Get_rows0": {
+              "status": "Succeeded"
+            }
+          },
+          "triggers": {
+            "Recurrence": {
+              "recurrence": {
+                "frequency": "[parameters('RecurrenceFrequency')]",
+                "interval": "[parameters('RecurrenceInterval')]"
+              },
+              "type": "Recurrence"
+            }
+          },
+          "actions": {
+            "For_each": {
+              "foreach": "@body('Get_rows')?['value']",
+              "actions": {
+                "Check_if_we_are_at_max_bulk_size_(50_records)": {
+                  "actions": {
+                    "Append_last_SCIMUser_record_in_the_chunk": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "SCIMBulkPayload",
+                        "value": "@outputs('Construct_SCIMUser')"
+                      }
+                    },
+                    "Finalize_SCIMBulkPayload": {
+                      "runAfter": {
+                        "Append_last_SCIMUser_record_in_the_chunk": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "SCIMBulkPayload",
+                        "value": "  ],\n  \"failOnErrors\": null\n}"
+                      }
+                    },
+                    "Prepare_next_chunk_of_SCIMBulkPayload": {
+                      "runAfter": {
+                        "Reset_Iteration_Count": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "SCIMBulkPayload",
+                        "value": "{\n  \"schemas\": [\n    \"urn:ietf:params:scim:api:messages:2.0:BulkRequest\"\n  ],\n  \"Operations\": ["
+                      }
+                    },
+                    "Reset_Iteration_Count": {
+                      "runAfter": {
+                        "Send_SCIMBulkPayload_to_API_endpoint": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "IterationCount",
+                        "value": 0
+                      }
+                    },
+                    "Send_SCIMBulkPayload_to_API_endpoint": {
+                      "runAfter": {
+                        "View_SCIMBulkPayload": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@parameters('SCIM API uri')",
+                        "method": "POST",
+                        "headers": {
+                          "Content-Type": "application/scim+json"
+                        },
+                        "body": "@variables('SCIMBulkPayload')",
+                        "authentication": {
+                          "type": "ManagedServiceIdentity",
+                          "audience": "[parameters('Send_SCIMBulkPayload_to_API_endpoint-Audience')]"
+                        }
+                      },
+                      "operationOptions": "DisableAsyncPattern"
+                    },
+                    "View_SCIMBulkPayload": {
+                      "runAfter": {
+                        "Finalize_SCIMBulkPayload": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@variables('SCIMBulkPayload')"
+                    }
+                  },
+                  "runAfter": {
+                    "Construct_SCIMUser": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Append_SCIMUser_record": {
+                        "type": "AppendToStringVariable",
+                        "inputs": {
+                          "name": "SCIMBulkPayload",
+                          "value": "@concat(outputs('Construct_SCIMUser'),',')"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "or": [
+                      {
+                        "equals": [
+                          "@variables('IterationCount')",
+                          50
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                },
+                "Construct_SCIMUser": {
+                  "runAfter": {
+                    "Increment_IterationCount": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": {
+                    "bulkId": "@{guid()}",
+                    "data": {
+                      "active": "@if(equals(items('For_each')?['WorkerStatus'],'Active'),true,false)",
+                      "addresses": [
+                        {
+                          "country": "@{item()?['country_name']}",
+                          "locality": "",
+                          "postalCode": "",
+                          "streetAddress": "",
+                          "type": "work"
+                        }
+                      ],
+                      "displayName": "@{item()?['first_name']} @{item()?['middle_name']} @{item()?['last_name']}",
+                      "externalId": "@{item()?['employee_grid']}",
+                      "name": {
+                        "familyName": "@{item()?['last_name']}",
+                        "givenName": "@{item()?['first_name']}"
+                      },
+                      "title": "@{item()?['position_title']}",
+                      "nickName": "",
+                      "phoneNumbers": [
+                        {
+                          "type": "mobile",
+                          "value": "@{item()?['work_mobile']}"
+                        }
+                      ],
+                      "emails": [
+                        {
+                          "type": "work",
+                          "value": "@{item()?['work_email']}"
+                        }
+                      ],
+                      "schemas": [
+                        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+                        "urn:microsoft:csv2scim"
+                      ],
+                      "urn:microsoft:csv2scim": {
+                        "terminationdate": "@{item()?['last_day_of_work']}",
+                        "hiredate": "@{item()?['first_day_of_work']}"
+                      },
+                      "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+                        "organization": "@{item()?['company_name']}",
+                        "costCenter": "@{item()?['cost_center_name']}",
+                        "department": "",
+                        "division": "@{item()?['service_area_name']}",
+                        "employeeNumber": "@{item()?['employee_grid']}",
+                        "manager": {
+                          "value": "@{item()?['manager_grid']}"
+                        }
+                      }
+                    },
+                    "method": "POST",
+                    "path": "/Users"
+                  }
+                },
+                "Increment_IterationCount": {
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "IterationCount",
+                    "value": 1
+                  }
+                }
+              },
+              "runAfter": {
+                "Initialize_InvocationDateTime": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach",
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 1
+                }
+              }
+            },
+            "Initialize_InvocationDateTime": {
+              "runAfter": {
+                "Initialize_SCIMBulkPayload": [
+                  "Succeeded"
+                ]
+              },
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "InvocationDateTime",
+                    "type": "string",
+                    "value": "@{utcNow()}"
+                  }
+                ]
+              }
+            },
+            "Initialize_IterationCount": {
+              "runAfter": {
+                "Get_rows": [
+                  "Succeeded"
+                ]
+              },
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "IterationCount",
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            },
+            "Initialize_SCIMBulkPayload": {
+              "runAfter": {
+                "Initialize_IterationCount": [
+                  "Succeeded"
+                ]
+              },
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "SCIMBulkPayload",
+                    "type": "string",
+                    "value": "{\n  \"schemas\": [\n    \"urn:ietf:params:scim:api:messages:2.0:BulkRequest\"\n  ],\n  \"Operations\": [\n"
+                  }
+                ]
+              }
+            },
+            "Get_rows": {
+              "runAfter": {},
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azuresql']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/datasets/default/tables/@{encodeURIComponent(encodeURIComponent(parameters('AzureSql View name')))}/items"
+
+              },
+              "runtimeConfiguration": {
+                "staticResult": {
+                  "staticResultOptions": "Disabled",
+                  "name": "Get_rows0"
+                }
+              }
+            },
+            "Check_if_bulk_has_unsend_records": {
+              "actions": {
+                "Finalize_SCIMBulkPayload_on_last_record": {
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "SCIMBulkPayload",
+                    "value": " ],\n  \"failOnErrors\": null\n}"
+                  }
+                },
+                "View_SCIMBulkPayload_on_last_record": {
+                  "runAfter": {
+                    "Finalize_SCIMBulkPayload_on_last_record": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@variables('SCIMBulkPayload')"
+                },
+                "Send_SCIMBulkPayload_to_API_endpoint_on_last_record": {
+                  "runAfter": {
+                    "View_SCIMBulkPayload_on_last_record": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "@parameters('SCIM API uri')",
+                    "method": "POST",
+                    "headers": {
+                      "Content-Type": "application/scim+json"
+                    },
+                    "body": "@variables('SCIMBulkPayload')",
+                    "authentication": {
+                      "type": "ManagedServiceIdentity",
+                      "audience": "[parameters('Send_SCIMBulkPayload_to_API_endpoint_on_last_record-Audience')]"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Remove_last_comma": {
+                  "type": "Compose",
+                  "inputs": "@substring(variables('SCIMBulkPayload'),0,sub(length(variables('SCIMBulkPayload')),1))"
+                },
+                "Set_variable": {
+                  "runAfter": {
+                    "Remove_last_comma": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "SCIMBulkPayload",
+                    "value": "@{outputs('Remove_last_comma')}"
+                  }
+                }
+              },
+              "runAfter": {
+                "For_each": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@variables('IterationCount')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuresql": {
+                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('azuresql_name'))]",
+                "connectionName": "[parameters('azuresql_name')]"
+              }
+            }
+          }
         }
-    ]
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      }
+    },
+    {
+      "type": "Microsoft.Web/connections",
+      "apiVersion": "2016-06-01",
+      "location": "[parameters('logicAppLocation')]",
+      "name": "[parameters('azuresql_name')]",
+      "properties": {
+        "api": {
+          "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('logicAppLocation'),'/managedApis/sqldw')]"
+        },
+        "displayName": "[parameters('azuresql_displayName')]",
+        "parameterValues": {
+          "server": "[parameters('azuresql_server')]",
+          "database": "[parameters('azuresql_database')]",
+          "authType": "[parameters('azuresql_authType')]",
+          "username": "[parameters('azuresql_username')]",
+          "password": "[parameters('azuresql_password')]",
+          "encryptConnection": "[parameters('azuresql_encryptConnection')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
 }
