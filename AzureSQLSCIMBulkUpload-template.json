@@ -41,7 +41,7 @@
         "displayName": "sqldw",
         "api": {
           "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/sqldw')]"
-        },
+        }
       }
     },
     {
