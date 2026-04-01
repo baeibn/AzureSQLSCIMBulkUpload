@@ -40,7 +40,7 @@
       "properties": {
         "displayName": "sqldw",
         "api": {
-          "id": "[resourceId('Microsoft.Web/connections', parameters('sqlConnectionName'))]"
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/sqldw')]"
         }
       }
     },
